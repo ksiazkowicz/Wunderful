@@ -9,7 +9,7 @@ Page {
     }
     Connections {
         target: Wunderful
-        onAuthSuccess: pageStack.pop()
+        onAuthSuccess: pageStack.replace(Qt.resolvedUrl("MainPage.qml"))
     }
 
     SilicaWebView {
