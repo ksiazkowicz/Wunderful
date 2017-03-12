@@ -48,9 +48,11 @@ Page {
                 }
 
                 label: "Due date"
+                description: task.dueDate < new Date() ? qsTr("Overdue") : ""
                 value: task.dueDate.toLocaleDateString()
                 width: parent.width
                 onClicked: openDateDialog()
+                Component.onCompleted: if (value === "") value = qsTr("Select")
             }
 
             SectionHeader {
@@ -62,7 +64,7 @@ Page {
                 model: task.items
                 interactive: false
                 height: listView.contentHeight
-                delegate: BackgroundItem {
+                delegate: ListItem {
                     id: delegate
                     TextSwitch {
                         text: modelData.title
@@ -73,20 +75,16 @@ Page {
             }
 
             Row {
-                TextField{
-                    id: subtaskArea
-                    width: column.width - Theme.paddingLarge - subtaskBtn.width
-                    label: "Subtask"
+                TextField {
+                    width: column.width
+                    label: "New subtask"
                     placeholderText: label
-                }
-
-                IconButton {
-                    id: subtaskBtn
-                    anchors { bottom: subtaskArea.bottom; bottomMargin: Theme.paddingLarge }
-                    icon.source: "image://theme/icon-m-add?" + (pressed
-                                 ? Theme.highlightColor
-                                 : Theme.primaryColor)
-                    onClicked: Wunderful.addSubtask(task.id, subtaskArea.text)
+                    EnterKey.enabled: text.length > 0
+                    EnterKey.iconSource: "image://theme/icon-m-enter-accept"
+                    EnterKey.onClicked: {
+                        Wunderful.addSubtask(task.id, text)
+                        text = ""
+                    }
                 }
             }
 
