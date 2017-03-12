@@ -80,6 +80,16 @@ void WunderfulAPI::sendPostRequest(const QUrl &url, const QUrlQuery &data){
     mManager->post(r, data.toString(QUrl::FullyEncoded).toUtf8());
 }
 
+void WunderfulAPI::sendPostRequestJson(const QUrl &url, QString json){
+    QNetworkRequest r(url);
+    r.setHeader(QNetworkRequest::ContentTypeHeader, "text/json");
+    if (authToken != "") {
+        r.setRawHeader("X-Access-Token", authToken.toUtf8());
+        r.setRawHeader("X-Client-ID", WunderfulSecrets::getSingleton().getClientId().toUtf8());
+    }
+    mManager->post(r, json.toUtf8());
+}
+
 void WunderfulAPI::sendGetRequest(const QUrl &url) {
     QNetworkRequest r(url);
     if (authToken != "") {
@@ -91,8 +101,7 @@ void WunderfulAPI::sendGetRequest(const QUrl &url) {
 
 void WunderfulAPI::sendPatchRequest(const QUrl &url, QString json) {
     QNetworkRequest r(url);
-    r.setHeader(QNetworkRequest::ContentTypeHeader,
-                       "text/json");
+    r.setHeader(QNetworkRequest::ContentTypeHeader, "text/json");
     if (authToken != "") {
         r.setRawHeader("X-Access-Token", authToken.toUtf8());
         r.setRawHeader("X-Client-ID", WunderfulSecrets::getSingleton().getClientId().toUtf8());
@@ -115,7 +124,7 @@ void WunderfulAPI::replyFinished(QNetworkReply *reply) {
     // get response code
     int v = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 
-    if (v == 200) {
+    if (v == 200 || v == 201) {
         QString content = reply->readAll();
         if (reply->url().toString().contains("/oauth/access_token")) {
             accessTokenCallback(content);
@@ -148,6 +157,10 @@ void WunderfulAPI::replyFinished(QNetworkReply *reply) {
 
         qDebug() << reply->url().toString();
         fallbackCallback(content);
+    }
+
+    if (v == 204) {
+        // "delete" callback received
     }
 }
 
@@ -220,6 +233,17 @@ void WunderfulAPI::updateSubtask(QString subtaskId, QString title, bool complete
 
     QString url = apiUrl + "/api/v1/subtasks/" + subtaskId;
     this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
+}
+
+void WunderfulAPI::addSubtask(QString taskId, QString title) {
+    QJsonObject updateRequest;
+    updateRequest["task_id"] = QVariant(taskId).toLongLong();
+    updateRequest["title"] = title;
+    updateRequest["completed"] = false;
+    QJsonDocument doc(updateRequest);
+
+    QString url = apiUrl + "/api/v1/subtasks";
+    this->sendPostRequestJson(url, QString(doc.toJson(QJsonDocument::Compact)));
 }
 
 void WunderfulAPI::foldersCallback(QString content, bool update) {
@@ -326,6 +350,8 @@ void WunderfulAPI::subtasksCallback(QString content, bool update) {
     for (int i=0; i<jsonArray.count(); i++) {
         QJsonObject object = jsonArray[i].toObject();
         QString id = object.value("id").toVariant().toString();
+
+        update = subtasks.contains(id);
 
         NestedListModel *item = 0;
         if (!update) {

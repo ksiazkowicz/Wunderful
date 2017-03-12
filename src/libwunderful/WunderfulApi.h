@@ -46,6 +46,7 @@ public slots:
     Q_INVOKABLE void updateDueDate(QString taskId, QDate dueDate);
 
     Q_INVOKABLE void updateSubtask(QString subtaskId, QString title, bool completed);
+    Q_INVOKABLE void addSubtask(QString taskId, QString title);
 
 private:
     QString apiUrl;
@@ -55,6 +56,7 @@ private:
     QString authToken = "";
 
     void sendPostRequest(const QUrl &url, const QUrlQuery &data);
+    void sendPostRequestJson(const QUrl &url, QString json);
     void sendGetRequest(const QUrl &url);
     void sendPatchRequest(const QUrl &url, QString json);
 
