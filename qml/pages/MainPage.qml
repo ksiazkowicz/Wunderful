@@ -1,5 +1,6 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
+import "../components"
 
 Page {
     id: page
@@ -24,44 +25,14 @@ Page {
                 }
             }
             MenuItem {
-                text: qsTr("New list")
-            }
-            MenuItem {
-                text: qsTr("New task")
+                text: qsTr("Add a to-do")
             }
         }
 
         model: Wunderful.items
-        delegate: BackgroundItem {
-            id: delegate
-
-            Label {
-                x: Theme.horizontalPageMargin
-                text: modelData.title
-                anchors.verticalCenter: parent.verticalCenter
-                color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
-            }
-            onClicked: pageStack.push(Qt.resolvedUrl("BrowsePage.qml"), {model: modelData.items, title: modelData.title, listId: modelData.id })
-        }
+        delegate: BrowserDelegate {}
         VerticalScrollDecorator {}
 
-        /*contentHeight: column.height
-
-        Column {
-            id: column
-
-            width: page.width
-            spacing: Theme.paddingLarge
-            PageHeader {
-                title: qsTr("Wunderful")
-            }
-            Label {
-                x: Theme.horizontalPageMargin
-                text: qsTr("Wunderful")
-                color: Theme.secondaryHighlightColor
-                font.pixelSize: Theme.fontSizeExtraLarge
-            }
-        }*/
     }
     Component.onCompleted: Wunderful.getLists();
 }
