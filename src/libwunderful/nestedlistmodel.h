@@ -88,6 +88,18 @@ public:
         emit itemsChanged();
     }
 
+    QObject* getParent() {
+        return parentItem;
+    }
+
+    bool hasParent() {
+        return parentItem != 0;
+    }
+
+    void setParent(QObject *parent) {
+        parentItem = parent;
+    }
+
 signals:
     void idChanged();
     void titleChanged();
@@ -112,6 +124,8 @@ private:
     QString title;
     QString type;
     QList<QObject*> items;
+
+    QObject* parentItem;
 
     int order;
     int revision;

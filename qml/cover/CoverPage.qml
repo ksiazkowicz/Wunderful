@@ -32,22 +32,43 @@ import QtQuick 2.0
 import Sailfish.Silica 1.0
 
 CoverBackground {
-    Label {
-        id: label
-        anchors.centerIn: parent
-        text: qsTr("My Cover")
+    ListView {
+        anchors.fill: parent
+        model: Wunderful.tasks
+        delegate: ListItem {
+            width: parent.width
+            Column {
+                width: parent.width
+                spacing: Theme.paddingMedium
+                Label {
+                    text: modelData.title
+                    color: Theme.primaryColor
+                    truncationMode: TruncationMode.Fade
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width
+                }
+                Label {
+                    text: modelData.parent.title
+                    font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.highlightColor
+                    truncationMode: TruncationMode.Fade
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width
+                }
+            }
+        }
     }
 
     CoverActionList {
         id: coverAction
 
         CoverAction {
-            iconSource: "image://theme/icon-cover-next"
+            iconSource: "image://theme/icon-cover-new"
         }
 
-        CoverAction {
+        /*CoverAction {
             iconSource: "image://theme/icon-cover-pause"
-        }
+        }*/
     }
 }
 

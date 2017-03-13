@@ -14,7 +14,22 @@ Page {
         PullDownMenu {
             MenuItem {
                 text: qsTr("Remove")
+                onClicked: {
+                    pageStack.pop();
+                    Wunderful.removeTask(task.id);
+                }
             }
+            MenuItem {
+                text: qsTr("Rename")
+                onClicked: {
+                    var dialog = pageStack.push(Qt.resolvedUrl("../components/InputDialog.qml"),
+                                                {result: task.title, title: qsTr("Enter new name"), placeholder: qsTr("Name"), label: qsTr("Name")})
+                    dialog.accepted.connect(function() {
+                        Wunderful.renameTask(task.id, dialog.result)
+                    })
+                }
+            }
+
             MenuItem {
                 text: qsTr("Star")
             }
@@ -32,27 +47,42 @@ Page {
             PageHeader {
                 title: task.title
             }
-            ValueButton {
-                property date selectedDate: task.dueDate
+            Row {
+                ValueButton {
+                    id: dueDateField
+                    property date selectedDate: task.dueDate
+                    width: column.width - Theme.paddingLarge - removeDueDateBtn.width
 
-                function openDateDialog() {
-                    var dialog = pageStack.push("Sailfish.Silica.DatePickerDialog", {
-                                    date: selectedDate
-                                 })
+                    function openDateDialog() {
+                        var dialog = pageStack.push("Sailfish.Silica.DatePickerDialog", {
+                                        date: selectedDate
+                                     })
 
-                    dialog.accepted.connect(function() {
-                        value = dialog.date.toLocaleDateString()
-                        selectedDate = dialog.date
-                        Wunderful.updateDueDate(task.id, selectedDate)
-                    })
+                        dialog.accepted.connect(function() {
+                            value = dialog.date.toLocaleDateString()
+                            selectedDate = dialog.date
+                            Wunderful.updateDueDate(task.id, selectedDate)
+                        })
+                    }
+
+                    label: qsTr("Due date")
+                    description: task.dueDate < new Date() ? qsTr("Overdue") : ""
+                    value: task.dueDate.toLocaleDateString()
+                    onClicked: openDateDialog()
+                    Component.onCompleted: if (value === "") value = qsTr("Select")
                 }
 
-                label: "Due date"
-                description: task.dueDate < new Date() ? qsTr("Overdue") : ""
-                value: task.dueDate.toLocaleDateString()
-                width: parent.width
-                onClicked: openDateDialog()
-                Component.onCompleted: if (value === "") value = qsTr("Select")
+                IconButton {
+                    id: removeDueDateBtn
+                    visible: dueDateField.value !== qsTr("Select")
+                    icon.source: "image://theme/icon-m-clear?" + (pressed
+                                 ? Theme.highlightColor
+                                 : Theme.primaryColor)
+                    onClicked: {
+                        Wunderful.clearDueDate(task.id)
+                        dueDateField.value = qsTr("Select")
+                    }
+                }
             }
 
             SectionHeader {
@@ -66,10 +96,19 @@ Page {
                 height: listView.contentHeight
                 delegate: ListItem {
                     id: delegate
-                    TextSwitch {
-                        text: modelData.title
-                        checked: modelData.completed
-                        onClicked: Wunderful.updateSubtask(modelData.id, modelData.title, checked)
+                    Row {
+                        TextSwitch {
+                            text: modelData.title
+                            checked: modelData.completed
+                            onClicked: Wunderful.updateSubtask(modelData.id, modelData.title, checked)
+                            width: column.width - Theme.paddingLarge - removeDueDateBtn.width
+                        }
+                        IconButton {
+                            icon.source: "image://theme/icon-m-clear?" + (pressed
+                                         ? Theme.highlightColor
+                                         : Theme.primaryColor)
+                            onClicked: Wunderful.removeSubtask(modelData.id)
+                        }
                     }
                 }
             }

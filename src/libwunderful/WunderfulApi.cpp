@@ -90,6 +90,17 @@ void WunderfulAPI::sendPostRequestJson(const QUrl &url, QString json){
     mManager->post(r, json.toUtf8());
 }
 
+void WunderfulAPI::sendDeleteRequest(const QUrl &url){
+    QNetworkRequest r(url);
+    r.setHeader(QNetworkRequest::ContentTypeHeader, "text/json");
+    if (authToken != "") {
+        r.setRawHeader("X-Access-Token", authToken.toUtf8());
+        r.setRawHeader("X-Client-ID", WunderfulSecrets::getSingleton().getClientId().toUtf8());
+    }
+
+    mManager->sendCustomRequest(r, "DELETE");
+}
+
 void WunderfulAPI::sendGetRequest(const QUrl &url) {
     QNetworkRequest r(url);
     if (authToken != "") {
@@ -161,6 +172,25 @@ void WunderfulAPI::replyFinished(QNetworkReply *reply) {
 
     if (v == 204) {
         // "delete" callback received
+        QString url = reply->url().toString();
+        if (url.contains("/api/v1/tasks")) {
+            QString taskId = url.split("/api/v1/tasks/").last();
+            taskId = taskId.split("?").first();
+            NestedListModel* task = (NestedListModel*)tasks.value(taskId);
+            NestedListModel* parent = (NestedListModel*)task->getParent();
+            parent->removeItem((QObject*)task);
+            tasks.remove(taskId);
+            emit tasksChanged();
+        }
+
+        if (url.contains("/api/v1/subtasks")) {
+            QString taskId = url.split("/api/v1/subtasks/").last();
+            taskId = taskId.split("?").first();
+            NestedListModel* subtask = (NestedListModel*)subtasks.value(taskId);
+            NestedListModel* parent = (NestedListModel*)subtask->getParent();
+            parent->removeItem((QObject*)subtask);
+            subtasks.remove(taskId);
+        }
     }
 }
 
@@ -221,6 +251,71 @@ void WunderfulAPI::updateDueDate(QString taskId, QDate dueDate) {
     this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
 }
 
+void WunderfulAPI::clearDueDate(QString taskId) {
+    NestedListModel* list = (NestedListModel*)tasks.value(taskId);
+    int revision = list->getRevision();
+
+    QJsonObject updateRequest;
+    updateRequest["revision"] = revision;
+    updateRequest["due_date"] = "";
+    QJsonDocument doc(updateRequest);
+
+    QString url = apiUrl + "/api/v1/tasks/" + taskId;
+    this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
+}
+
+void WunderfulAPI::updateTaskCompleted(QString taskId, bool completed) {
+    QJsonObject updateRequest;
+    updateRequest["revision"] = getTaskRevision(taskId);
+    updateRequest["completed"] = completed;
+    QJsonDocument doc(updateRequest);
+
+    QString url = apiUrl + "/api/v1/tasks/" + taskId;
+    this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
+}
+
+void WunderfulAPI::removeTask(QString taskId) {
+    QString url = apiUrl + "/api/v1/tasks/" + taskId + "?revision=" + QString::number(getTaskRevision(taskId));
+    this->sendDeleteRequest(url);
+}
+
+void WunderfulAPI::removeSubtask(QString subtaskId) {
+    QString url = apiUrl + "/api/v1/subtasks/" + subtaskId + "?revision=" + QString::number(getSubtaskRevision(subtaskId));
+    this->sendDeleteRequest(url);
+}
+
+void WunderfulAPI::renameTask(QString taskId, QString title) {
+    QJsonObject updateRequest;
+    updateRequest["revision"] = getTaskRevision(taskId);
+    updateRequest["title"] = title;
+    QJsonDocument doc(updateRequest);
+
+    QString url = apiUrl + "/api/v1/tasks/" + taskId;
+    this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
+}
+
+void WunderfulAPI::completeTask(QString taskId, bool completed) {
+    QJsonObject updateRequest;
+    updateRequest["revision"] = getTaskRevision(taskId);
+    updateRequest["completed"] = completed;
+    QJsonDocument doc(updateRequest);
+
+    QString url = apiUrl + "/api/v1/tasks/" + taskId;
+    this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
+}
+
+int WunderfulAPI::getTaskRevision(QString taskId) {
+    NestedListModel* item = (NestedListModel*)tasks.value(taskId);
+    int revision = item->getRevision();
+    return revision;
+}
+
+int WunderfulAPI::getSubtaskRevision(QString subtaskId) {
+    NestedListModel* item = (NestedListModel*)subtasks.value(subtaskId);
+    int revision = item->getRevision();
+    return revision;
+}
+
 void WunderfulAPI::updateSubtask(QString subtaskId, QString title, bool completed) {
     NestedListModel* item = (NestedListModel*)subtasks.value(subtaskId);
     int revision = item->getRevision();
@@ -274,6 +369,8 @@ void WunderfulAPI::foldersCallback(QString content, bool update) {
             QString id = listIds[i].toVariant().toString();
             if (lists.keys().contains(id)) {
                 item->addItem(lists.value(id));
+                NestedListModel* list = (NestedListModel*)lists.value(id);
+                list->setParent(item);
                 root.removeAll(lists.value(id));
             }
         }
@@ -333,7 +430,9 @@ void WunderfulAPI::tasksCallback(QString content, bool update) {
         if (!update) {
             NestedListModel* list = (NestedListModel*)lists.value(object["list_id"].toVariant().toString());
             list->addItem(item);
+            item->setParent((QObject*)list);
             tasks.insert(id, item);
+            emit tasksChanged();
             this->getSubtasks(id, true);
         }
     }
@@ -374,6 +473,7 @@ void WunderfulAPI::subtasksCallback(QString content, bool update) {
         if (!update) {
             subtasks.insert(id, item);
             list->addItem(item);
+            item->setParent((QObject*)list);
         }
     }
 }

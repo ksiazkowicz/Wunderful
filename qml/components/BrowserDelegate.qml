@@ -1,8 +1,9 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
 
-BackgroundItem {
+ListItem {
     id: delegate
+    width: parent.width
     function getIcon() {
         if (modelData.type === "list" && modelData.title === "inbox")
             return "image://theme/icon-m-mail-open"
@@ -39,5 +40,36 @@ BackgroundItem {
         if (modelData.type === "list" || modelData.type === "folder")
             pageStack.push(Qt.resolvedUrl("../pages/BrowsePage.qml"), {list: modelData});
         else pageStack.push(Qt.resolvedUrl("../pages/TaskPage.qml"), {task: modelData});
+    }
+
+    menu: ContextMenu {
+        MenuItem {
+            text: modelData.type === "folder" ? qsTr("Ungroup") : qsTr("Delete")
+            onClicked: {
+                if (modelData.type === "task")
+                    Wunderful.removeTask(modelData.id);
+            }
+        }
+        MenuItem {
+            text: qsTr("Rename")
+            onClicked: {
+                var dialog = pageStack.push(Qt.resolvedUrl("InputDialog.qml"),
+                                            {result: modelData.title, title: qsTr("Enter new name"), placeholder: qsTr("Name"), label: qsTr("Name")})
+                dialog.accepted.connect(function() {
+                    if (modelData.type === "task") {
+                        Wunderful.renameTask(modelData.id, dialog.result)
+                    }
+                })
+            }
+        }
+        MenuItem {
+            visible: modelData.type === "task"
+            text: qsTr("Complete")
+            onClicked: modelData.completed === true ? Wunderful.completeTask(modelData.id, false) : Wunderful.completeTask(modelData.id, true)
+        }
+        MenuItem {
+            visible: modelData.type === "task"
+            text: qsTr("Star")
+        }
     }
 }

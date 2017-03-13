@@ -49,5 +49,7 @@ TRANSLATIONS += translations/harbour-wunderful-de.ts
 DISTFILES += \
     qml/pages/BrowsePage.qml \
     qml/main.qml \
-    qml/pages/TaskPage.qml
+    qml/pages/TaskPage.qml \
+    qml/components/BrowserDelegate.qml \
+    qml/components/InputDialog.qml
 
