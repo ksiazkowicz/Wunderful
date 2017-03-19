@@ -33,7 +33,15 @@ ListItem {
             color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
             truncationMode: TruncationMode.Fade
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - icon.width - parent.spacing
+            width: parent.width - icon.width - parent.spacing*2 - iconStarred.width
+        }
+
+        Image {
+            id: iconStarred
+            anchors.verticalCenter: parent.verticalCenter
+            source: modelData.type === "task" ? (modelData.starred ? "image://theme/icon-m-favorite-selected" : "image://theme/icon-m-favorite") + "?" + (pressed
+                                                                          ? Theme.highlightColor
+                                                                          : Theme.primaryColor) : ""
         }
     }
     onClicked: {
@@ -65,11 +73,12 @@ ListItem {
         MenuItem {
             visible: modelData.type === "task"
             text: qsTr("Complete")
-            onClicked: modelData.completed === true ? Wunderful.completeTask(modelData.id, false) : Wunderful.completeTask(modelData.id, true)
+            onClicked: Wunderful.completeTask(modelData.id, !modelData.completed)
         }
         MenuItem {
             visible: modelData.type === "task"
             text: qsTr("Star")
+            onClicked: Wunderful.starTask(modelData.id, !modelData.starred)
         }
     }
 }

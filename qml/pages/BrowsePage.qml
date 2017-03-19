@@ -36,6 +36,13 @@ Page {
             MenuItem {
                 visible: list.type === "list"
                 text: qsTr("Add a to-do")
+                onClicked: {
+                    var dialog = pageStack.push(Qt.resolvedUrl("../components/InputDialog.qml"),
+                                                {title: qsTr("Add a to-do"), placeholder: qsTr("Name"), label: qsTr("Name")})
+                    dialog.accepted.connect(function() {
+                        Wunderful.addTask(list.id, dialog.result)
+                    })
+                }
             }
         }
 

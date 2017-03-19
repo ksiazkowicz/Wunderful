@@ -31,10 +31,12 @@ Page {
             }
 
             MenuItem {
-                text: qsTr("Star")
+                text: task.starred ? qsTr("Unstar") : qsTr("Star")
+                onClicked: Wunderful.starTask(task.id, !task.starred)
             }
             MenuItem {
-                text: qsTr("Mark as done")
+                text: task.completed ? qsTr("Mark as not done") : qsTr("Mark as done")
+                onClicked: Wunderful.completeTask(task.id, !task.completed)
             }
         }
 

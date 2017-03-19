@@ -16,6 +16,7 @@ class NestedListModel : public QObject
     Q_PROPERTY(QVariant items READ getItems NOTIFY itemsChanged)
     Q_PROPERTY(int order READ getOrder WRITE setOrder NOTIFY orderChanged)
     Q_PROPERTY(bool completed READ getCompleted WRITE setCompleted NOTIFY completedChanged)
+    Q_PROPERTY(bool starred READ getStarred WRITE setStarred NOTIFY starredChanged)
     Q_PROPERTY(QString note READ getNote WRITE setNote NOTIFY noteChanged)
     Q_PROPERTY(QVariant comments READ getComments NOTIFY commentsChanged)
     Q_PROPERTY(QVariant files READ getFiles NOTIFY filesChanged)
@@ -23,6 +24,8 @@ class NestedListModel : public QObject
     Q_PROPERTY(QDate dueDate READ getDueDate WRITE setDueDate NOTIFY dueDateChanged)
 public:
     explicit NestedListModel(QObject *parent = 0) : QObject(parent) {
+        starred = false;
+        completed = false;
     }
 
     void setTitle(QString title) { this->title = title; emit titleChanged(); }
@@ -30,6 +33,7 @@ public:
     void setId(QString id) { this->id = id; emit idChanged(); }
     void setOrder(int order) { this->order = order; emit orderChanged(); }
     void setCompleted(bool completed) { this->completed = completed; emit completedChanged(); }
+    void setStarred(bool starred) { this->starred = starred; emit starredChanged(); }
     void setNote(QString note) { this->note = note; emit noteChanged(); }
     void setDueDate(QDate date) { this->dueDate = date; emit dueDateChanged(); }
     void setRevision(int revision) { this->revision = revision; emit revisionChanged(); }
@@ -41,6 +45,7 @@ public:
 
     const int getOrder() { return this->order; }
     const bool getCompleted() { return this->completed; }
+    const bool getStarred() { return this->starred; }
     const QString getNote() { return this->note; }
     QVariant getComments() { return QVariant::fromValue(this->comments); }
     QVariant getFiles() { return QVariant::fromValue(this->files); }
@@ -64,6 +69,7 @@ public:
         this->connect(item, SIGNAL(remindersChanged()), this, SLOT(updateItems()));
         this->connect(item, SIGNAL(dueDateChanged()), this, SLOT(updateItems()));
         this->connect(item, SIGNAL(revisionChanged()), this, SLOT(updateItems()));
+        this->connect(item, SIGNAL(starredChanged()), this, SLOT(updateItems()));
 
         emit itemsChanged();
     }
@@ -108,6 +114,7 @@ signals:
 
     void orderChanged();
     void completedChanged();
+    void starredChanged();
     void noteChanged();
     void commentsChanged();
     void filesChanged();
@@ -132,6 +139,7 @@ private:
 
     // task specific
     bool completed;
+    bool starred;
     QString note;
     QList<QObject*> comments;
     QList<QObject*> files;

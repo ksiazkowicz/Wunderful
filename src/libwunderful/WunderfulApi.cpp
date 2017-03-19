@@ -129,6 +129,8 @@ void WunderfulAPI::replyFinished(QNetworkReply *reply) {
     if (reply->error() != QNetworkReply::NoError){
         qWarning() << "ERROR:" << reply->errorString();
         qWarning() << reply->readAll();
+        if (reply->errorString() == "Host requires authentication")
+            emit authInvalid();
         return;
     }
 
@@ -221,7 +223,7 @@ void WunderfulAPI::getLists() {
 void WunderfulAPI::getTasks(QString listId, bool completed) {
     QString url = apiUrl + "/api/v1/tasks?list_id="+listId;
     if (completed) {
-        url += "&completed=1";
+        url += "&completed=true";
     }
     this->sendGetRequest(url);
 }
@@ -264,16 +266,6 @@ void WunderfulAPI::clearDueDate(QString taskId) {
     this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
 }
 
-void WunderfulAPI::updateTaskCompleted(QString taskId, bool completed) {
-    QJsonObject updateRequest;
-    updateRequest["revision"] = getTaskRevision(taskId);
-    updateRequest["completed"] = completed;
-    QJsonDocument doc(updateRequest);
-
-    QString url = apiUrl + "/api/v1/tasks/" + taskId;
-    this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
-}
-
 void WunderfulAPI::removeTask(QString taskId) {
     QString url = apiUrl + "/api/v1/tasks/" + taskId + "?revision=" + QString::number(getTaskRevision(taskId));
     this->sendDeleteRequest(url);
@@ -295,9 +287,21 @@ void WunderfulAPI::renameTask(QString taskId, QString title) {
 }
 
 void WunderfulAPI::completeTask(QString taskId, bool completed) {
+    NestedListModel* item = (NestedListModel*)tasks.value(taskId);
+    QJsonObject updateRequest;
+    updateRequest["revision"] = item->getRevision();
+    updateRequest["completed"] = completed;
+    QJsonDocument doc(updateRequest);
+
+    QString url = apiUrl + "/api/v1/tasks/" + taskId;
+    this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
+    item->setCompleted(completed);
+}
+
+void WunderfulAPI::starTask(QString taskId, bool starred) {
     QJsonObject updateRequest;
     updateRequest["revision"] = getTaskRevision(taskId);
-    updateRequest["completed"] = completed;
+    updateRequest["starred"] = starred;
     QJsonDocument doc(updateRequest);
 
     QString url = apiUrl + "/api/v1/tasks/" + taskId;
@@ -328,6 +332,17 @@ void WunderfulAPI::updateSubtask(QString subtaskId, QString title, bool complete
 
     QString url = apiUrl + "/api/v1/subtasks/" + subtaskId;
     this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
+}
+
+void WunderfulAPI::addTask(QString listId, QString title) {
+    QJsonObject updateRequest;
+    updateRequest["list_id"] = QVariant(listId).toLongLong();
+    updateRequest["title"] = title;
+    updateRequest["completed"] = false;
+    QJsonDocument doc(updateRequest);
+
+    QString url = apiUrl + "/api/v1/tasks";
+    this->sendPostRequestJson(url, QString(doc.toJson(QJsonDocument::Compact)));
 }
 
 void WunderfulAPI::addSubtask(QString taskId, QString title) {
@@ -392,9 +407,12 @@ void WunderfulAPI::listsCallback(QString content, bool update) {
         item->setTitle(object["title"].toString());
         item->setType(object["type"].toString());
         item->setRevision(object["revision"].toInt());
+        if (object["list_type"] == "inbox")
+            inboxListId = item->getId();
         root.append(item);
         lists.insert(item->getId(), item);
-        this->getTasks(item->getId(), true);
+        this->getTasks(item->getId(), true);  // get completed tasks
+        this->getTasks(item->getId(), false); // get other tasks
     }
     this->getFolders();
 }
@@ -427,6 +445,9 @@ void WunderfulAPI::tasksCallback(QString content, bool update) {
         item->setType(object["type"].toString());
         item->setRevision(object["revision"].toInt());
         item->setDueDate(QDate::fromString(object["due_date"].toString(), Qt::ISODate));
+        item->setStarred(object["starred"].toBool());
+        if (object.keys().contains("completed_by_id"))
+            item->setCompleted(true);
         if (!update) {
             NestedListModel* list = (NestedListModel*)lists.value(object["list_id"].toVariant().toString());
             list->addItem(item);

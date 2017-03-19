@@ -29,6 +29,7 @@ public:
 signals:
     void error(QString errorString);
     void authFailed(QString reason);
+    void authInvalid();
     void authSuccess();
     void itemsChanged();
     void tasksChanged();
@@ -46,16 +47,22 @@ public slots:
     Q_INVOKABLE QVariant getItems() { return QVariant::fromValue(root); }
     Q_INVOKABLE QVariant getTasksList() { return QVariant::fromValue(tasks); }
     Q_INVOKABLE void resetList();
-    Q_INVOKABLE void updateDueDate(QString taskId, QDate dueDate);
-    Q_INVOKABLE void clearDueDate(QString taskId);
-    Q_INVOKABLE void updateTaskCompleted(QString taskId, bool completed);
+
+    Q_INVOKABLE void addTask(QString listId, QString title);
+    Q_INVOKABLE void removeTask(QString taskId);
     Q_INVOKABLE void renameTask(QString taskId, QString title);
     Q_INVOKABLE void completeTask(QString taskId, bool completed);
-    Q_INVOKABLE void removeTask(QString taskId);
+    Q_INVOKABLE void starTask(QString taskId, bool starred);
+
+    Q_INVOKABLE void updateDueDate(QString taskId, QDate dueDate);
+    Q_INVOKABLE void clearDueDate(QString taskId);
+
+    Q_INVOKABLE void addSubtask(QString taskId, QString title);
+    Q_INVOKABLE void updateSubtask(QString subtaskId, QString title, bool completed);
     Q_INVOKABLE void removeSubtask(QString subtaskId);
 
-    Q_INVOKABLE void updateSubtask(QString subtaskId, QString title, bool completed);
-    Q_INVOKABLE void addSubtask(QString taskId, QString title);
+    Q_INVOKABLE QString getInboxId() { return this->inboxListId; }
+
 
 private:
     QString apiUrl;
@@ -79,6 +86,8 @@ private:
 
     int getTaskRevision(QString taskId);
     int getSubtaskRevision(QString subtaskId);
+
+    QString inboxListId;
 
     Settings *settings;
     QNetworkAccessManager *mManager;

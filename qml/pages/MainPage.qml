@@ -26,6 +26,13 @@ Page {
             }
             MenuItem {
                 text: qsTr("Add a to-do")
+                onClicked: {
+                    var dialog = pageStack.push(Qt.resolvedUrl("../components/InputDialog.qml"),
+                                                {title: qsTr("Add a to-do"), placeholder: qsTr("Name"), label: qsTr("Name")})
+                    dialog.accepted.connect(function() {
+                        Wunderful.addTask(Wunderful.getInboxId(), dialog.result)
+                    })
+                }
             }
         }
 
