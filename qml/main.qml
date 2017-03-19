@@ -31,6 +31,7 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
 import "pages"
+import "components"
 
 ApplicationWindow
 {
@@ -43,6 +44,20 @@ ApplicationWindow
             pageStack.push(Qt.resolvedUrl("pages/MainPage.qml"))
         } else {
             pageStack.push(Qt.resolvedUrl("pages/WelcomePage.qml"))
+        }
+    }
+
+    Banner {
+        id: banner
+    }
+
+    Connections {
+        target: Wunderful
+        onAuthInvalid: {
+            if (pageStack.depth > 0)
+                pageStack.pop();
+            pageStack.push(Qt.resolvedUrl("pages/WelcomePage.qml"))
+            banner.notify(qsTr("Something went wrong. Please log-in again."))
         }
     }
 }
