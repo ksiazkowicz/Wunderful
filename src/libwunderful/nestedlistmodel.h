@@ -13,6 +13,7 @@ class NestedListModel : public QObject
     Q_PROPERTY(QString id READ getId WRITE setId NOTIFY idChanged)
     Q_PROPERTY(QString title READ getTitle WRITE setTitle NOTIFY titleChanged)
     Q_PROPERTY(QString type READ getType WRITE setType NOTIFY typeChanged)
+    Q_PROPERTY(QString url READ getUrl WRITE setUrl NOTIFY urlChanged)
     Q_PROPERTY(QVariant items READ getItems NOTIFY itemsChanged)
     Q_PROPERTY(int order READ getOrder WRITE setOrder NOTIFY orderChanged)
     Q_PROPERTY(bool completed READ getCompleted WRITE setCompleted NOTIFY completedChanged)
@@ -31,6 +32,7 @@ public:
     void setTitle(QString title) { this->title = title; emit titleChanged(); }
     void setType(QString type) { this->type = type; emit typeChanged(); }
     void setId(QString id) { this->id = id; emit idChanged(); }
+    void setUrl(QString url) { this->url = url; emit urlChanged(); }
     void setOrder(int order) { this->order = order; emit orderChanged(); }
     void setCompleted(bool completed) { this->completed = completed; emit completedChanged(); }
     void setStarred(bool starred) { this->starred = starred; emit starredChanged(); }
@@ -41,6 +43,7 @@ public:
     const QString getType() { return this->type; }
     const QString getTitle() { return this->title; }
     const QString getId() { return this->id; }
+    const QString getUrl() { return this->url; }
     QVariant getItems() { return QVariant::fromValue(this->items); }
 
     const int getOrder() { return this->order; }
@@ -53,9 +56,7 @@ public:
     const QDate getDueDate() { return this->dueDate; }
     const int getRevision() { return this->revision; }
 
-    void addItem(QObject* item) {
-        this->items.append(item);
-
+    void connectSignals(QObject *item) {
         // connect all the signals
         this->connect(item, SIGNAL(idChanged()), this, SLOT(updateItems()));
         this->connect(item, SIGNAL(titleChanged()), this, SLOT(updateItems()));
@@ -70,8 +71,19 @@ public:
         this->connect(item, SIGNAL(dueDateChanged()), this, SLOT(updateItems()));
         this->connect(item, SIGNAL(revisionChanged()), this, SLOT(updateItems()));
         this->connect(item, SIGNAL(starredChanged()), this, SLOT(updateItems()));
+        this->connect(item, SIGNAL(urlChanged()), this, SLOT(updateItems()));
+    }
 
+    void addItem(QObject* item) {
+        this->items.append(item);
+        this->connectSignals(item);
         emit itemsChanged();
+    }
+
+    void addFile(QObject* item) {
+        this->files.append(item);
+        this->connectSignals(item);
+        emit filesChanged();
     }
 
     QObject* getItemById(QString id) {
@@ -89,9 +101,15 @@ public:
         this->items.clear();
         emit itemsChanged();
     }
+
     void removeItem(QObject* item) {
         this->items.removeAll(item);
         emit itemsChanged();
+    }
+
+    void clearFiles() {
+        this->files.clear();
+        emit filesChanged();
     }
 
     QObject* getParent() {
@@ -122,6 +140,7 @@ signals:
 
     void dueDateChanged();
     void revisionChanged();
+    void urlChanged();
 
 public slots:
     void updateItems() { emit itemsChanged(); }
@@ -130,6 +149,7 @@ private:
     QString id;
     QString title;
     QString type;
+    QString url;
     QList<QObject*> items;
 
     QObject* parentItem;

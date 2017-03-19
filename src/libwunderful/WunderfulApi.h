@@ -43,6 +43,7 @@ public slots:
     Q_INVOKABLE void getFolders();
     Q_INVOKABLE void getLists();
     Q_INVOKABLE void getTasks(QString listId, bool completed);
+    Q_INVOKABLE void getFiles(QString taskId);
     Q_INVOKABLE void getSubtasks(QString taskId, bool completed);
     Q_INVOKABLE QVariant getItems() { return QVariant::fromValue(root); }
     Q_INVOKABLE QVariant getTasksList() { return QVariant::fromValue(tasks); }
@@ -83,6 +84,7 @@ private:
     void listsCallback(QString content, bool update);
     void tasksCallback(QString content, bool update);
     void subtasksCallback(QString content, bool update);
+    void filesCallback(QString content, bool update);
 
     int getTaskRevision(QString taskId);
     int getSubtaskRevision(QString subtaskId);

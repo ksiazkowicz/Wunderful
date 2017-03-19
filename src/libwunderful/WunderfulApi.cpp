@@ -168,6 +168,12 @@ void WunderfulAPI::replyFinished(QNetworkReply *reply) {
             return;
         }
 
+        if (reply->url().toString().contains("/api/v1/files")) {
+            bool update = reply->url().toString().contains("/api/v1/files/");
+            filesCallback(content, update);
+            return;
+        }
+
         qDebug() << reply->url().toString();
         fallbackCallback(content);
     }
@@ -236,6 +242,15 @@ void WunderfulAPI::getSubtasks(QString taskId, bool completed) {
         if (completed) {
             url += "&completed=1";
         }
+        this->sendGetRequest(url);
+    }
+}
+
+void WunderfulAPI::getFiles(QString taskId) {
+    NestedListModel* list = (NestedListModel*)tasks.value(taskId);
+    if (list) {
+        list->clearFiles();
+        QString url = apiUrl + "/api/v1/files?task_id="+taskId;
         this->sendGetRequest(url);
     }
 }
@@ -455,6 +470,7 @@ void WunderfulAPI::tasksCallback(QString content, bool update) {
             tasks.insert(id, item);
             emit tasksChanged();
             this->getSubtasks(id, true);
+            this->getFiles(id);
         }
     }
 }
@@ -494,6 +510,35 @@ void WunderfulAPI::subtasksCallback(QString content, bool update) {
         if (!update) {
             subtasks.insert(id, item);
             list->addItem(item);
+            item->setParent((QObject*)list);
+        }
+    }
+}
+
+void WunderfulAPI::filesCallback(QString content, bool update) {
+    QJsonDocument jsonResponse = QJsonDocument::fromJson(content.toUtf8());
+
+    QJsonArray jsonArray;
+    if (jsonResponse.isArray())
+        jsonArray = jsonResponse.array();
+    else jsonArray.append(jsonResponse.object());
+
+    for (int i=0; i<jsonArray.count(); i++) {
+        QJsonObject object = jsonArray[i].toObject();
+        QString id = object.value("id").toVariant().toString();
+
+        update = subtasks.contains(id);
+
+        NestedListModel *item = new NestedListModel();
+        item->setId(id);
+        item->setTitle(object["file_name"].toString());
+        item->setRevision(object["revision"].toInt());
+        item->setType(object["content_type"].toString());
+        item->setUrl(object["url"].toString());
+        NestedListModel* list = (NestedListModel*)tasks.value(object["task_id"].toVariant().toString());
+        if (!update) {
+            subtasks.insert(id, item);
+            list->addFile(item);
             item->setParent((QObject*)list);
         }
     }

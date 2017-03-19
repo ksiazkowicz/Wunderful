@@ -163,7 +163,53 @@ Page {
             SectionHeader {
                 text: qsTr("Files")
             }
+            SilicaListView {
+                id: listViewFiles
+                anchors { left: parent.left; right: parent.right; }
+                model: task.files
+                interactive: false
+                height: listViewFiles.contentHeight
+                delegate: ListItem {
+                    id: delegateFiles
+                    width: parent.width
+                    function getIcon() {
+                        //if (modelData.type === "list")
+                        return "image://theme/icon-m-document"
+                    }
+                    Row {
+                        spacing: Theme.paddingLarge
+                        x: Theme.horizontalPageMargin
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - 2*x
+
+                        Image {
+                            id: icon
+                            anchors.verticalCenter: parent.verticalCenter
+                            source: delegateFiles.getIcon() + "?" + (pressed
+                                         ? Theme.highlightColor
+                                         : Theme.primaryColor)
+                        }
+
+                        Label {
+                            text: modelData.title
+                            color: delegateFiles.highlighted ? Theme.highlightColor : Theme.primaryColor
+                            truncationMode: TruncationMode.Fade
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - icon.width - parent.spacing
+                        }
+                    }
+                    onClicked: Qt.openUrlExternally(modelData.url)
+
+                    menu: ContextMenu {
+                        MenuItem {
+                            text: qsTr("Delete")
+
+                        }
+                    }
+                }
+            }
             Label {
+                visible: listViewFiles.count < 1
                 x: Theme.horizontalPageMargin
                 text: "No files"
                 anchors.horizontalCenter: parent.horizontalCenter
