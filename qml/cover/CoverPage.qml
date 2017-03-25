@@ -44,7 +44,6 @@ CoverBackground {
                     text: modelData.title
                     color: Theme.primaryColor
                     truncationMode: TruncationMode.Fade
-                    anchors.verticalCenter: parent.verticalCenter
                     width: parent.width
                 }
                 Label {
@@ -52,7 +51,6 @@ CoverBackground {
                     font.pixelSize: Theme.fontSizeExtraSmall
                     color: Theme.highlightColor
                     truncationMode: TruncationMode.Fade
-                    anchors.verticalCenter: parent.verticalCenter
                     width: parent.width
                 }
             }

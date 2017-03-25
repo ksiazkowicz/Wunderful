@@ -23,10 +23,12 @@ class NestedListModel : public QObject
     Q_PROPERTY(QVariant files READ getFiles NOTIFY filesChanged)
     Q_PROPERTY(QVariant reminders READ getReminders NOTIFY remindersChanged)
     Q_PROPERTY(QDate dueDate READ getDueDate WRITE setDueDate NOTIFY dueDateChanged)
+    Q_PROPERTY(QVariant parent READ getQmlParent NOTIFY parentChanged)
 public:
     explicit NestedListModel(QObject *parent = 0) : QObject(parent) {
         starred = false;
         completed = false;
+        parentItem = 0;
     }
 
     void setTitle(QString title) { this->title = title; emit titleChanged(); }
@@ -45,6 +47,7 @@ public:
     const QString getId() { return this->id; }
     const QString getUrl() { return this->url; }
     QVariant getItems() { return QVariant::fromValue(this->items); }
+    QList<QObject*> getItemsQO() { return this->items; }
 
     const int getOrder() { return this->order; }
     const bool getCompleted() { return this->completed; }
@@ -53,6 +56,7 @@ public:
     QVariant getComments() { return QVariant::fromValue(this->comments); }
     QVariant getFiles() { return QVariant::fromValue(this->files); }
     QVariant getReminders() { return QVariant::fromValue(this->reminders); }
+    QVariant getQmlParent() { return QVariant::fromValue(this->getParent()); }
     const QDate getDueDate() { return this->dueDate; }
     const int getRevision() { return this->revision; }
 
@@ -116,12 +120,13 @@ public:
         return parentItem;
     }
 
-    bool hasParent() {
+    Q_INVOKABLE bool hasParent() {
         return parentItem != 0;
     }
 
     void setParent(QObject *parent) {
         parentItem = parent;
+        emit parentChanged();
     }
 
 signals:
@@ -141,6 +146,8 @@ signals:
     void dueDateChanged();
     void revisionChanged();
     void urlChanged();
+
+    void parentChanged();
 
 public slots:
     void updateItems() { emit itemsChanged(); }

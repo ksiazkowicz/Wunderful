@@ -21,6 +21,7 @@ class WunderfulAPI : public QObject
     Q_OBJECT
     Q_PROPERTY(QVariant items READ getItems NOTIFY itemsChanged)
     Q_PROPERTY(QVariant tasks READ getTasksList NOTIFY tasksChanged)
+    Q_PROPERTY(QVariant folders READ getFolderList NOTIFY itemsChanged)
 
 public:
     explicit WunderfulAPI(Settings *appSettings, QObject *parent = 0);
@@ -46,12 +47,18 @@ public slots:
     Q_INVOKABLE void getFiles(QString taskId);
     Q_INVOKABLE void getSubtasks(QString taskId, bool completed);
     Q_INVOKABLE QVariant getItems() { return QVariant::fromValue(root); }
-    Q_INVOKABLE QVariant getTasksList() { return QVariant::fromValue(tasks); }
+    Q_INVOKABLE QVariant getTasksList() { return QVariant::fromValue(tasks.values()); }
+    Q_INVOKABLE QVariant getFolderList() { return QVariant::fromValue(folders.values()); }
     Q_INVOKABLE void resetList();
 
     Q_INVOKABLE void addList(QString title);
     Q_INVOKABLE void removeList(QString listId);
     Q_INVOKABLE void renameList(QString listId, QString title);
+
+    Q_INVOKABLE void newFolder(QString listId, QString title);
+    Q_INVOKABLE void removeFolder(QString folderId);
+    Q_INVOKABLE void renameFolder(QString folderId, QString title);
+    Q_INVOKABLE void moveToFolder(QString listId, QString folderId, bool remove);
 
     Q_INVOKABLE void addTask(QString listId, QString title);
     Q_INVOKABLE void removeTask(QString taskId);
@@ -93,6 +100,7 @@ private:
     int getListRevision(QString listId);
     int getTaskRevision(QString taskId);
     int getSubtaskRevision(QString subtaskId);
+    int getFolderRevision(QString folderId);
 
     QString inboxListId;
 

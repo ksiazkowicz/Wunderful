@@ -191,6 +191,7 @@ void WunderfulAPI::replyFinished(QNetworkReply *reply) {
             else root.removeOne((QObject*)list);
             lists.remove(listId);
             emit itemsChanged();
+            delete list;
         }
 
         if (url.contains("/api/v1/tasks")) {
@@ -201,6 +202,7 @@ void WunderfulAPI::replyFinished(QNetworkReply *reply) {
             parent->removeItem((QObject*)task);
             tasks.remove(taskId);
             emit tasksChanged();
+            delete task;
         }
 
         if (url.contains("/api/v1/subtasks")) {
@@ -210,6 +212,25 @@ void WunderfulAPI::replyFinished(QNetworkReply *reply) {
             NestedListModel* parent = (NestedListModel*)subtask->getParent();
             parent->removeItem((QObject*)subtask);
             subtasks.remove(taskId);
+            delete subtask;
+        }
+
+        if (url.contains("/api/v1/folders")) {
+            QString folderId = url.split("/api/v1/folders/").last();
+            folderId = folderId.split("?").first();
+            NestedListModel* item = (NestedListModel*)folders.value(folderId);
+
+            QList<QObject*> items = item->getItemsQO();
+            for (int i=0; i<items.length(); i++) {
+                NestedListModel* list = (NestedListModel*)items.at(i);
+                root.append(list);
+                list->setParent(0);
+            }
+
+            root.removeAll(item);
+            folders.remove(folderId);
+            delete item;
+            emit itemsChanged();
         }
     }
 }
@@ -298,6 +319,61 @@ void WunderfulAPI::removeList(QString listId) {
     this->sendDeleteRequest(url);
 }
 
+void WunderfulAPI::removeFolder(QString folderId) {
+    QString url = apiUrl + "/api/v1/folders/" + folderId + "?revision=" + QString::number(getFolderRevision(folderId));
+    this->sendDeleteRequest(url);
+}
+
+void WunderfulAPI::renameFolder(QString folderId, QString title) {
+    QJsonObject updateRequest;
+    updateRequest["revision"] = getFolderRevision(folderId);
+    updateRequest["title"] = title;
+    QJsonDocument doc(updateRequest);
+
+    QString url = apiUrl + "/api/v1/folders/" + folderId;
+    this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
+}
+
+void WunderfulAPI::newFolder(QString listId, QString title) {
+    QJsonObject updateRequest;
+    updateRequest["title"] = title;
+
+    // list ids require some more work
+    QJsonArray array;
+    array.append(QJsonValue(QVariant(listId).toLongLong()));
+    updateRequest["list_ids"] = array;
+
+    QJsonDocument doc(updateRequest);
+
+    QString url = apiUrl + "/api/v1/folders";
+    this->sendPostRequestJson(url, QString(doc.toJson(QJsonDocument::Compact)));
+}
+
+void WunderfulAPI::moveToFolder(QString listId, QString folderId, bool remove) {
+    NestedListModel* item = (NestedListModel*)folders.value(folderId);
+
+    // make an array of current list ids
+    QJsonArray currentIds;
+    QList<QObject*> items = item->getItemsQO();
+    for (int i=0; i<items.length(); i++) {
+        NestedListModel* list = (NestedListModel*)items.at(i);
+        if (list->getId() != listId)
+            currentIds.append(QJsonValue(list->getId().toLongLong()));
+    }
+    // append given id
+    if (!remove)
+        currentIds.append(QJsonValue(QVariant(listId).toLongLong()));
+
+    // make update request
+    QJsonObject updateRequest;
+    updateRequest["revision"] = item->getRevision();
+    updateRequest["list_ids"] = currentIds;
+    QJsonDocument doc(updateRequest);
+
+    QString url = apiUrl + "/api/v1/folders/" + folderId;
+    this->sendPatchRequest(url, QString(doc.toJson(QJsonDocument::Compact)));
+}
+
 void WunderfulAPI::renameList(QString listId, QString title) {
     QJsonObject updateRequest;
     updateRequest["revision"] = getListRevision(listId);
@@ -352,6 +428,12 @@ void WunderfulAPI::starTask(QString taskId, bool starred) {
 
 int WunderfulAPI::getListRevision(QString listId) {
     NestedListModel* item = (NestedListModel*)lists.value(listId);
+    int revision = item->getRevision();
+    return revision;
+}
+
+int WunderfulAPI::getFolderRevision(QString folderId) {
+    NestedListModel* item = (NestedListModel*)folders.value(folderId);
     int revision = item->getRevision();
     return revision;
 }
@@ -443,15 +525,32 @@ void WunderfulAPI::foldersCallback(QString content, bool update) {
         item->setType(object["type"].toString());
 
         QJsonArray listIds = object["list_ids"].toArray();
+        QList<QString> usedIds;
         for (int i=0; i<listIds.count(); i++) {
             QString id = listIds[i].toVariant().toString();
+            usedIds.append(id);
             if (lists.keys().contains(id)) {
-                item->addItem(lists.value(id));
+                if (item->getItemById(id) == 0) {
+                    item->addItem(lists.value(id));
+                }
                 NestedListModel* list = (NestedListModel*)lists.value(id);
                 list->setParent(item);
                 root.removeAll(lists.value(id));
             }
         }
+
+        if (up2) {
+            QList<QObject*> items = item->getItemsQO();
+            for (int i=0; i<items.length(); i++) {
+                NestedListModel* list = (NestedListModel*)items.at(i);
+                if (!usedIds.contains(list->getId())) {
+                    root.append(list);
+                    item->removeItem(list);
+                    list->setParent(0);
+                }
+            }
+        }
+
         if (!up2) {
             folders.insert(id, item);
             root.append(item);
