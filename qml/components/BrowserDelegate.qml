@@ -56,6 +56,8 @@ ListItem {
             onClicked: {
                 if (modelData.type === "task")
                     Wunderful.removeTask(modelData.id);
+                if (modelData.type === "list")
+                    Wunderful.removeList(modelData.id)
             }
         }
         MenuItem {
@@ -66,6 +68,9 @@ ListItem {
                 dialog.accepted.connect(function() {
                     if (modelData.type === "task") {
                         Wunderful.renameTask(modelData.id, dialog.result)
+                    }
+                    if (modelData.type === "list") {
+                        Wunderful.renameList(modelData.id, dialog.result)
                     }
                 })
             }

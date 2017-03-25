@@ -49,6 +49,10 @@ public slots:
     Q_INVOKABLE QVariant getTasksList() { return QVariant::fromValue(tasks); }
     Q_INVOKABLE void resetList();
 
+    Q_INVOKABLE void addList(QString title);
+    Q_INVOKABLE void removeList(QString listId);
+    Q_INVOKABLE void renameList(QString listId, QString title);
+
     Q_INVOKABLE void addTask(QString listId, QString title);
     Q_INVOKABLE void removeTask(QString taskId);
     Q_INVOKABLE void renameTask(QString taskId, QString title);
@@ -86,6 +90,7 @@ private:
     void subtasksCallback(QString content, bool update);
     void filesCallback(QString content, bool update);
 
+    int getListRevision(QString listId);
     int getTaskRevision(QString taskId);
     int getSubtaskRevision(QString subtaskId);
 

@@ -21,6 +21,10 @@ Page {
             MenuItem {
                 visible: list.type === "list"
                 text: qsTr("Delete")
+                onClicked: {
+                    pageStack.pop()
+                    Wunderful.removeList(list.id)
+                }
             }
             MenuItem {
                 visible: list.type === "list"
@@ -28,10 +32,25 @@ Page {
             }
             MenuItem {
                 text: qsTr("Rename")
+                onClicked: {
+                    var dialog = pageStack.push(Qt.resolvedUrl("../components/InputDialog.qml"),
+                                                {title: qsTr("Rename list"), result: list.title, placeholder: qsTr("Name"), label: qsTr("Name")})
+                    dialog.accepted.connect(function() {
+                        if (list.type === "list")
+                            Wunderful.renameList(list.id, dialog.result)
+                    })
+                }
             }
             MenuItem {
                 visible: list.type === "folder"
                 text: qsTr("Create list")
+                onClicked: {
+                    var dialog = pageStack.push(Qt.resolvedUrl("../components/InputDialog.qml"),
+                                                {title: qsTr("New list"), placeholder: qsTr("Name"), label: qsTr("Name")})
+                    dialog.accepted.connect(function() {
+                        Wunderful.addList(dialog.result)
+                    })
+                }
             }
             MenuItem {
                 visible: list.type === "list"
