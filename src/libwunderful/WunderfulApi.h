@@ -75,7 +75,6 @@ public slots:
 
     Q_INVOKABLE QString getInboxId() { return this->inboxListId; }
 
-
 private:
     QString apiUrl;
     QString oAuthUrl;
@@ -101,6 +100,8 @@ private:
     int getTaskRevision(QString taskId);
     int getSubtaskRevision(QString subtaskId);
     int getFolderRevision(QString folderId);
+
+    void propagateChanges(NestedListModel *item);
 
     QString inboxListId;
 
