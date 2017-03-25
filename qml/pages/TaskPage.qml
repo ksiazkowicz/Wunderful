@@ -16,7 +16,7 @@ Page {
                 text: qsTr("Remove")
                 onClicked: {
                     pageStack.pop();
-                    Wunderful.removeTask(task.id);
+                    Wunderful.removeObject(task.type, task.id);
                 }
             }
             MenuItem {
@@ -25,7 +25,7 @@ Page {
                     var dialog = pageStack.push(Qt.resolvedUrl("../components/InputDialog.qml"),
                                                 {result: task.title, title: qsTr("Enter new name"), placeholder: qsTr("Name"), label: qsTr("Name")})
                     dialog.accepted.connect(function() {
-                        Wunderful.renameTask(task.id, dialog.result)
+                        Wunderful.renameObject(task.type, task.id, dialog.result)
                     })
                 }
             }
@@ -109,7 +109,7 @@ Page {
                             icon.source: "image://theme/icon-m-clear?" + (pressed
                                          ? Theme.highlightColor
                                          : Theme.primaryColor)
-                            onClicked: Wunderful.removeSubtask(modelData.id)
+                            onClicked: Wunderful.removeObject(modelData.type, modelData.id)
                         }
                     }
                 }

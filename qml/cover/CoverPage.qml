@@ -34,7 +34,7 @@ import Sailfish.Silica 1.0
 CoverBackground {
     ListView {
         anchors.fill: parent
-        model: Wunderful.tasks
+        //model: Wunderful.tasks
         delegate: ListItem {
             width: parent.width
             Column {

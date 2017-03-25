@@ -60,14 +60,7 @@ ListItem {
         enabled: !disableMenu
         MenuItem {
             text: modelData.type === "folder" ? qsTr("Ungroup") : qsTr("Delete")
-            onClicked: {
-                if (modelData.type === "task")
-                    Wunderful.removeTask(modelData.id);
-                if (modelData.type === "list")
-                    Wunderful.removeList(modelData.id)
-                if (modelData.type === "folder")
-                    Wunderful.removeFolder(modelData.id)
-            }
+            onClicked: Wunderful.removeObject(modelData.type, modelData.id)
         }
         MenuItem {
             visible: modelData.type === "list"
@@ -87,15 +80,7 @@ ListItem {
                 var dialog = pageStack.push(Qt.resolvedUrl("InputDialog.qml"),
                                             {result: modelData.title, title: qsTr("Enter new name"), placeholder: qsTr("Name"), label: qsTr("Name")})
                 dialog.accepted.connect(function() {
-                    if (modelData.type === "task") {
-                        Wunderful.renameTask(modelData.id, dialog.result)
-                    }
-                    if (modelData.type === "list") {
-                        Wunderful.renameList(modelData.id, dialog.result)
-                    }
-                    if (modelData.type === "folder") {
-                        Wunderful.renameFolder(modelData.id, dialog.result)
-                    }
+                    Wunderful.renameObject(modelData.type, modelData.id, dialog.result)
                 })
             }
         }

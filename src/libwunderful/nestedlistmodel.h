@@ -29,6 +29,7 @@ public:
         starred = false;
         completed = false;
         parentItem = 0;
+        revision = 0;
     }
 
     void setTitle(QString title) { this->title = title; emit titleChanged(); }
@@ -80,12 +81,14 @@ public:
 
     void addItem(QObject* item) {
         this->items.append(item);
+        ((NestedListModel*)item)->setParent((QObject*)this);
         this->connectSignals(item);
         emit itemsChanged();
     }
 
     void addFile(QObject* item) {
         this->files.append(item);
+        ((NestedListModel*)item)->setParent((QObject*)this);
         this->connectSignals(item);
         emit filesChanged();
     }
@@ -99,6 +102,14 @@ public:
                 item = tmpItem;
         }
         return item;
+    }
+
+    bool hasItem(QObject* item) {
+        return items.contains(item);
+    }
+
+    bool hasFile(QObject* item) {
+        return files.contains(item);
     }
 
     void clearItems() {
@@ -127,6 +138,10 @@ public:
     void setParent(QObject *parent) {
         parentItem = parent;
         emit parentChanged();
+    }
+
+    QString getPath() {
+        return this->getType() + ":" + this->getId();
     }
 
 signals:

@@ -18,13 +18,6 @@ Page {
                 text: qsTr("Settings")
             }
             MenuItem {
-                text: qsTr("Refresh")
-                onClicked: {
-                    Wunderful.resetList();
-                    Wunderful.getLists();
-                }
-            }
-            MenuItem {
                 text: qsTr("New list")
                 onClicked: {
                     var dialog = pageStack.push(Qt.resolvedUrl("../components/InputDialog.qml"),
@@ -46,10 +39,10 @@ Page {
             }
         }
 
-        model: Wunderful.items
+        model: Wunderful.rootItem.items
         delegate: BrowserDelegate {}
         VerticalScrollDecorator {}
 
     }
-    Component.onCompleted: Wunderful.getLists();
+    Component.onCompleted: Wunderful.getContent("list");
 }

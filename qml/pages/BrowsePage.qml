@@ -15,15 +15,10 @@ Page {
 
         PullDownMenu {
             MenuItem {
-                visible: list.type === "folder"
-                text: qsTr("Ungroup")
-            }
-            MenuItem {
-                visible: list.type === "list"
-                text: qsTr("Delete")
+                text: list.type === "folder" ? qsTr("Ungroup") : qsTr("Delete")
                 onClicked: {
                     pageStack.pop()
-                    Wunderful.removeList(list.id)
+                    Wunderful.removeObject(list.type, list.id)
                 }
             }
             MenuItem {
@@ -34,10 +29,9 @@ Page {
                 text: qsTr("Rename")
                 onClicked: {
                     var dialog = pageStack.push(Qt.resolvedUrl("../components/InputDialog.qml"),
-                                                {title: qsTr("Rename list"), result: list.title, placeholder: qsTr("Name"), label: qsTr("Name")})
+                                                {title: qsTr("Rename"), result: list.title, placeholder: qsTr("Name"), label: qsTr("Name")})
                     dialog.accepted.connect(function() {
-                        if (list.type === "list")
-                            Wunderful.renameList(list.id, dialog.result)
+                        Wunderful.renameObject(list.type, list.id, dialog.result)
                     })
                 }
             }
